@@ -40,8 +40,12 @@ class Net(nn.Module):
         # ==> 128x52x52
         # after maxpooling ==>128x26x26
         
+        self.conv4 = nn.Conv2d(128, 256, 3)
+        # ==> 256x24x24
+        # after maxpooling ==> 256x12x12
+        
         # Linear layer ==> We need 136 keypoints (x,y co-ordinates)
-        self.fc1 = nn.Linear(128*26*26, 1024)
+        self.fc1 = nn.Linear(256*12*12, 1024)
 
         # dropout with p=0.3
         self.fc1_drop = nn.Dropout(p=0.3)
@@ -50,7 +54,9 @@ class Net(nn.Module):
         
         self.fc2_drop = nn.Dropout(p=0.2)
         
-        self.fc3 = nn.Linear(512, 68*2)
+        self.fc3 = nn.Linear(512, 256)
+        
+        self.fc4 = nn.Linear(256, 68*2)
 
     def forward(self, x):
         ## TODO: Define the feedforward behavior of this model
@@ -58,13 +64,17 @@ class Net(nn.Module):
         
         x = self.pool(F.relu(self.conv1(x)))
         
-        x = self.fc1_drop(x)
+        x = self.fc2_drop(x)
         
         x = self.pool(F.relu(self.conv2(x)))
         
-        x = self.fc1_drop(x)
+        x = self.fc2_drop(x)
         
         x = self.pool(F.relu(self.conv3(x)))
+        
+        x = self.fc2_drop(x)
+        
+        x = self.pool(F.relu(self.conv4(x)))
         
         #Preparation for linear layaer ==> flatten
         x = x.view(x.size(0),-1)
@@ -78,7 +88,11 @@ class Net(nn.Module):
         
         x = self.fc2_drop(x)
         
-        x = self.fc3(x)
+        x = F.relu(self.fc3(x))
+        
+        x = self.fc2_drop(x)
+        
+        x = self.fc4(x)
         
         # To check whether output size is correct
         #print(x.size())
